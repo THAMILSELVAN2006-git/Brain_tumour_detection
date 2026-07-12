@@ -1,3 +1,4 @@
+import gdown
 import os
 import io
 import numpy as np
@@ -22,25 +23,29 @@ app.add_middleware(
 )
 
 # Paths and settings
-MODEL_PATH = os.getenv("MODEL_PATH", "../best_brain_tumor_model.keras")
+MODEL_PATH = "best_brain_tumor_model.keras"
+
+FILE_ID = "1p7LVuiEMudbVEbZfPI-LC7z0P45Cxwaz"
 CLASS_NAMES = ["glioma", "meningioma", "notumor", "pituitary"]
 model = None
 
 @app.on_event("startup")
 def load_ml_model():
     global model
+
     if not os.path.exists(MODEL_PATH):
-        print(f"Error: Model not found at path: {MODEL_PATH}")
-        # Try parent directory relative fallback if executed inside ml_service folder
-        fallback_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "best_brain_tumor_model.keras"))
-        if os.path.exists(fallback_path):
-            print(f"Loading fallback model from: {fallback_path}")
-            model = load_model(fallback_path)
-            return
-        raise RuntimeError(f"Could not locate the trained model at {MODEL_PATH} or {fallback_path}")
-    print(f"Loading Keras model from: {MODEL_PATH}")
+        print("Downloading model from Google Drive...")
+        gdown.download(
+            id=FILE_ID,
+            output=MODEL_PATH,
+            quiet=False,
+            fuzzy=True
+        )
+    if not os.path.exists(MODEL_PATH):
+        raise RuntimeError("Model download failed!")
+    print("Loading AI model...")
     model = load_model(MODEL_PATH)
-    print("Model loaded successfully!")
+    print("Model loaded successfully.")
 
 @app.get("/health")
 def health_check():
